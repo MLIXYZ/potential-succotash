@@ -1,6 +1,6 @@
 import logging
+from contextlib import asynccontextmanager
 
-import httpx
 from anthropic import APIError
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -9,12 +9,25 @@ from pydantic import BaseModel, Field
 
 load_dotenv()
 
-from app.services.rag_service import retrieve_documents
+from app.services.rag_service import (
+    RetrievalError,
+    close_rag,
+    init_rag,
+    retrieve_documents,
+)
 from app.services.claude_service import generate_answer
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="SFSU AI Campus Assistant API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_rag()
+    yield
+    close_rag()
+
+
+app = FastAPI(title="SFSU AI Campus Assistant API", version="0.1.0", lifespan=lifespan)
 
 # Allow the local React frontend to call FastAPI
 app.add_middleware(
@@ -59,7 +72,7 @@ async def chat(request: ChatRequest):
             ],
         }
 
-    except (httpx.HTTPError, APIError):
+    except (RetrievalError, APIError):
         logger.exception("Upstream AI service failure")
         raise HTTPException(
             status_code=502, detail="An AI service is temporarily unavailable"
