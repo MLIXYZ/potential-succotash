@@ -21,6 +21,7 @@ def _conn_kwargs(schema: str) -> dict[str, str]:
         raise ValueError(f"invalid RAG_DB_SCHEMA: {schema!r}")
     return {"options": f"-c search_path={schema},public"}
 
+
 _RRF_K = 60
 
 _HYBRID_SEARCH_SQL = """
@@ -138,7 +139,9 @@ def check_db(dsn: str, dim: int, schema: str = "rag") -> tuple[list[str], list[s
         if not conn.execute(
             "SELECT 1 FROM pg_namespace WHERE nspname = %s", (schema,)
         ).fetchone():
-            problems.append(f"schema {schema!r} does not exist: run rag/sql/roles.sql as superuser")
+            problems.append(
+                f"schema {schema!r} does not exist: run rag/sql/roles.sql as superuser"
+            )
             return ok, warnings, problems
         if not conn.execute("SELECT has_schema_privilege(%s, 'USAGE')", (schema,)).fetchone()[0]:
             problems.append(f"{user[0]} lacks USAGE on schema {schema}")
@@ -151,7 +154,9 @@ def check_db(dsn: str, dim: int, schema: str = "rag") -> tuple[list[str], list[s
             problems.append(f"stray tables in public: {', '.join(strays)} (drop them; "
                             f"they belong in {schema})")
 
-        ext = conn.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'").fetchone()
+        ext = conn.execute(
+            "SELECT extversion FROM pg_extension WHERE extname = 'vector'"
+        ).fetchone()
         if not ext:
             problems.append("pgvector not enabled: as superuser run CREATE EXTENSION vector;")
             return ok, warnings, problems
@@ -185,7 +190,7 @@ def check_db(dsn: str, dim: int, schema: str = "rag") -> tuple[list[str], list[s
             qualified = f"{schema}.{seq}"
             row = conn.execute("SELECT to_regclass(%s)", (qualified,)).fetchone()
             if row[0] and not conn.execute(
-                "SELECT has_sequence_privilege(%s, 'USAGE')", (qualified,)).fetchone()[0]:
+                    "SELECT has_sequence_privilege(%s, 'USAGE')", (qualified,)).fetchone()[0]:
                 problems.append(f"{user[0]} lacks USAGE on sequence {qualified}")
 
         typmod = conn.execute(

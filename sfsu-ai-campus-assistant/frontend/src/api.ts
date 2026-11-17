@@ -1,14 +1,16 @@
 // Single place that talks to the backend, so a contract change touches one file.
-//
-// Backend contract (backend/app/main.py):
-//   POST /api/chat  { message }  ->  { answer, sources: [{ title, url }] }
-// `location` is optional and not sent by the backend yet; MapCard renders only
-// when it is present, so adding it server-side later needs no frontend change.
+// The request/response shapes live in types.ts.
+import type { ChatResponse } from "./types";
 
 export class ChatError extends Error {}
 
-export async function sendMessage(message, signal) {
-  let res;
+// An abort is a deliberate cancel, not a failure the user should see.
+export function isAbort(err: unknown): boolean {
+  return (err as { name?: unknown } | null)?.name === "AbortError";
+}
+
+export async function sendMessage(message: string, signal?: AbortSignal): Promise<ChatResponse> {
+  let res: Response;
   try {
     res = await fetch("/api/chat", {
       method: "POST",
@@ -17,8 +19,7 @@ export async function sendMessage(message, signal) {
       signal,
     });
   } catch (err) {
-    // An abort is a deliberate cancel, not a failure the user should see.
-    if (err.name === "AbortError") throw err;
+    if (isAbort(err)) throw err;
     throw new ChatError("Can't reach the assistant. Check your connection and try again.");
   }
 
@@ -27,8 +28,8 @@ export async function sendMessage(message, signal) {
     throw new ChatError(
       res.status === 502
         ? "The assistant is temporarily unavailable. Please try again in a moment."
-        : "Something went wrong with that question. Please try again."
+        : "Something went wrong with that question. Please try again.",
     );
   }
-  return res.json();
+  return (await res.json()) as ChatResponse;
 }

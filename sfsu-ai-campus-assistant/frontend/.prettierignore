@@ -1,0 +1,7 @@
+dist
+node_modules
+package-lock.json
+# Hand-laid-out compact rules; Prettier would expand every one-liner.
+*.css
+*.md
+*.html

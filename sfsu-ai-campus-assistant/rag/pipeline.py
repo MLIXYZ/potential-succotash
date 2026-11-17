@@ -7,7 +7,6 @@ from typing import Any, Callable
 
 from .chunking import chunk_text
 from .config import Settings
-from .embedder import Embedder
 from .store import Chunk, Store, init_schema, render_text
 
 _EMBED_SKIP = frozenset({"source_url", "observed_on"})
@@ -15,6 +14,8 @@ _EMBED_SKIP = frozenset({"source_url", "observed_on"})
 
 class RAG:
     def __init__(self, settings: Settings) -> None:
+        from .embedder import Embedder
+
         self.settings = settings
         self.embedder = Embedder(settings)
         self.store = Store(settings.database_url, settings.db_schema)

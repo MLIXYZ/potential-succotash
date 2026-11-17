@@ -1,0 +1,5 @@
+[flake8]
+max-line-length = 100
+# E203: whitespace before ':' in slices (tail[space + 1 :]), which flake8 misreads.
+extend-ignore = E203
+exclude = .git,__pycache__,.venv,venv,frontend/node_modules,frontend/dist

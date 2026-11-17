@@ -6,6 +6,8 @@
 #   sudo bash run.sh --status     # show service status + recent logs
 #
 # Run as a sudoer (e.g. mark). Git/pip run as the `deploy` user; systemctl as root.
+# The server checkout tracks the `deploy` branch, which CI fast-forwards with
+# main + the built frontend once all checks pass.
 set -euo pipefail
 
 APP_USER="deploy"

@@ -11,6 +11,8 @@ Group=deploy
 WorkingDirectory=/opt/potential-succotash/sfsu-ai-campus-assistant/backend
 # backend/.env is loaded by the app itself (python-dotenv)
 Environment=PYTHONUNBUFFERED=1
+# The rag package lives next to backend/, not inside it.
+Environment=PYTHONPATH=/opt/potential-succotash/sfsu-ai-campus-assistant
 # One worker: each worker would load its own copy of the embedding model.
 ExecStart=/opt/potential-succotash/sfsu-ai-campus-assistant/backend/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 Restart=on-failure

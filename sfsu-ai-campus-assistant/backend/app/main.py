@@ -1,23 +1,37 @@
 import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from anthropic import APIError
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-load_dotenv()
-
+from app.services.claude_service import generate_answer
 from app.services.rag_service import (
     RetrievalError,
     close_rag,
     init_rag,
     retrieve_documents,
 )
-from app.services.claude_service import generate_answer
+
+# The services read their settings from the environment at call time, so
+# loading .env after the imports above is fine.
+load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+# Built React app (frontend/dist). Served from "/" so the UI and API share one
+# origin in production; in development Vite serves the UI and proxies /api.
+FRONTEND_DIST = Path(
+    os.getenv(
+        "FRONTEND_DIST",
+        Path(__file__).resolve().parents[2] / "frontend" / "dist",
+    )
+)
 
 
 @asynccontextmanager
@@ -77,3 +91,8 @@ async def chat(request: ChatRequest):
         raise HTTPException(
             status_code=502, detail="An AI service is temporarily unavailable"
         )
+
+
+# Mounted last so /api/* routes above take precedence.
+if FRONTEND_DIST.is_dir():
+    app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
